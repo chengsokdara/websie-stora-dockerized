@@ -1,0 +1,56 @@
+version: "3"
+
+services:
+  mongo:
+    image: mongo:3.6.19-xenial
+    ports:
+      - "27017:27017"
+    networks:
+      - websie-stora
+    volumes:
+      - mongo-data:/data/db
+
+  websie-api:
+    image: "node:14-slim"
+    user: "node"
+    working_dir: /home/node/app/server
+    environment:
+      - NODE_ENV=development
+    volumes:
+      - ./server:/home/node/app/server
+    expose:
+      - "4000"
+    command: node index.js
+    ports:
+      - "4000:4000"
+    networks:
+      - websie-stora
+    depends_on:
+      - mongo
+
+  websie-app:
+    image: "node:14-slim"
+    user: "node"
+    working_dir: /home/node/app/client
+    environment:
+      - NODE_ENV=development
+    volumes:
+      - ./client:/home/node/app/client
+    expose:
+      - "3000"
+    command: sh -c "npm rebuild esbuild && yarn dev --host"
+    stdin_open: true
+    ports:
+      - "3000:3000"
+    networks:
+      - websie-stora
+    depends_on:
+      - websie-api
+
+networks:
+  websie-stora:
+    driver: bridge
+
+volumes:
+  mongo-data:
+    driver: local
